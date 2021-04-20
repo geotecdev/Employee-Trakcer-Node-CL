@@ -3,14 +3,6 @@
 const inquirer = require("inquirer");
 const table = require("console.table");
 
-//mysql connection
-// const connection = mysql.createConnection({
-//   host: "localhost",
-//   port: 3306,
-//   user: "root",
-//   password: "MyPassword",
-//   database: "employee_Db",
-// });
 
 const appSession = () => {
     inquirer.prompt({
