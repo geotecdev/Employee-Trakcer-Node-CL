@@ -3,8 +3,20 @@
 const inquirer = require("inquirer");
 const table = require("console.table");
 
+const connection = mysql.createConnection({
+    host: "localhost",
+    user: "root",
+    password: "",
+    database: "employees"
+});
 
-const appSession = () => {
+connection.connect((err) => {
+    if (err) throw err
+    //entry pt
+    mainMenu();
+});
+
+const mainMenu = () => {
     inquirer.prompt({
         name: sessionAction,
         type: "rawlist",
@@ -51,10 +63,31 @@ const appSession = () => {
 };
 
 //viewDepartments()
+const viewDepartments = () => {
+    const sqlQuery = "SELECT * FROM department";
+    console.log("Departments List:");
+    connection.query(sqlQuery, (err, departments) => {
+        console.table(departments);
+        mainMenu();
+    });
+};
+
 //addDepartment()
 //viewRoles()
+const viewRoles = () => {
+    const sqlQuery = `SELECT rl.title, rl.salary, dep.department_name FROM role as rl
+                    LEFT JOIN department AS dep ON rl.department_id=dep.id`;
+    console.log("Roles List:");
+    connection.query(sqlQuery, (err, roles) => {
+        console.table(roles);
+        mainMenu();
+    });
+};
+
 //addRole()
 //viewEmployees()
+
+
 //addEmployee()
 //updateEmployeeRole()
 //endSession()

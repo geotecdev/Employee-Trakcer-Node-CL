@@ -1,7 +1,7 @@
-DROP DATABASE IF EXISTS employees_db;
+DROP DATABASE IF EXISTS employees;
 
-CREATE DATABASE employees_db;
-USE employees_db;
+CREATE DATABASE employees;
+USE employees;
 
 CREATE TABLE department (
     id INTEGER NOT NULL AUTO_INCREMENT,
@@ -18,7 +18,7 @@ CREATE TABLE role (
     FOREIGN KEY (department_id) REFERENCES department(id) ON DELETE CASCADE
 );
 
-CREATE TABLE employees (
+CREATE TABLE employee (
     id INTEGER NOT NULL AUTO_INCREMENT,
     first_name VARCHAR(30) NOT NULL,
     last_name VARCHAR(30) NOT NULL,
