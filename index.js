@@ -35,19 +35,19 @@ const mainMenu = () => {
     .then((selectedAction) => {
         switch (selectedAction.action) {
             case "View Departments":
-                //viewDepartments();
+                viewDepartments();
                 break;
             case "Add Department":
                 //addDepartment();
                 break;
             case "View Roles":
-                //viewRoles();
+                viewRoles();
                 break;                                           
             case "Add Role":
                 //addRole();
                 break;
             case "View Employees":
-                //viewEmployees();
+                viewEmployees();
                 break;
             case "Add Employee":
                 //addEmployee();
@@ -86,7 +86,15 @@ const viewRoles = () => {
 
 //addRole()
 //viewEmployees()
-
+const viewEmployees = () => {
+    const sqlQuery = `SELECT emp.first_name, emp.last_name, rl.title, mgr.first_name as manager_fn, mgr.last_name as manager_ln 
+                        FROM employee as emp
+                        LEFT JOIN role as rl ON emp.role_id=rl.id
+                        LEFT JOIN employee as mgr ON emp.manager_id=mgr.id`;
+    connection.query(sqlQuery, (err, employees) => {
+        console.table(employees);
+    });
+}
 
 //addEmployee()
 //updateEmployeeRole()
