@@ -50,7 +50,7 @@ const mainMenu = () => {
                 viewEmployees();
                 break;
             case "Add Employee":
-                //addEmployee();
+                addEmployee();
                 break;
             case "Update Employee Role":
                 //updateEmployeeRole();
@@ -67,21 +67,25 @@ const viewDepartments = () => {
     const sqlQuery = "SELECT * FROM department";
     console.log("Departments List:");
     connection.query(sqlQuery, (err, departments) => {
-        console.table(departments);
-        mainMenu();
+        console.table(departments);        
     });
+    mainMenu();
 };
 
 //addDepartment()
+const addDepartment = () => {
+
+};
+
 //viewRoles()
 const viewRoles = () => {
     const sqlQuery = `SELECT rl.title, rl.salary, dep.department_name FROM role as rl
-                    LEFT JOIN department AS dep ON rl.department_id=dep.id`;
+                        LEFT JOIN department AS dep ON rl.department_id=dep.id`;
     console.log("Roles List:");
     connection.query(sqlQuery, (err, roles) => {
-        console.table(roles);
-        mainMenu();
+        console.table(roles);        
     });
+    mainMenu();
 };
 
 //addRole()
@@ -91,11 +95,91 @@ const viewEmployees = () => {
                         FROM employee as emp
                         LEFT JOIN role as rl ON emp.role_id=rl.id
                         LEFT JOIN employee as mgr ON emp.manager_id=mgr.id`;
+    console.log("Employees List:");
     connection.query(sqlQuery, (err, employees) => {
-        console.table(employees);
+        console.table(employees);        
     });
+    mainMenu();
 }
 
 //addEmployee()
+const addEmployee = () => {
+    //get roles for role_id
+    let sqlQuery = `SELECT * FROM role`;
+    connection.query(sqlQuery, (err, roles) => {
+        if (err) throw err;
+        //get employees for manager_id
+        sqlQuery = `SELECT * FROM employee`;
+        connection.query(sqlQuery, (err, mgrs) => {
+            inquirer.prompt([
+                {
+                    name: "first_name",
+                    type: "input",
+                    message: "enter new employee's first name",                
+                },
+                {
+                    name: "last_name",
+                    type: "input",
+                    message: "enter new employee's last name",  
+                },
+                {
+                    name: "selected_role",
+                    type: "rawlist",
+                    message: "choose a role for the employee",
+                    choices() {
+                        const choices = [];
+                        roles.forEach(role => {
+                            choices.push(role.title);
+                        })
+                        return choices;
+                    }
+                },
+                {
+                    name: "selected_manager",
+                    type: "rawlist",
+                    message: "select the employee's manager",
+                    choices() {
+                        const choices = [];
+                        mgrs.forEach(mgr => {
+                            choices.push(mgr.id + ';' + mgr.last_name + ";" + mgr.first_name);
+                        })
+                        return choices;
+                    }
+                }
+            ])
+            .then((answers) => {
+                let employeeRole = firstOrDefault(roles, title, answers.selected_role);
+                let employeeMgr = firstOrDefault(mgrs, id, answers.selected_manager.split(';')[0]);
+                if (employeeRole !== undefined && employeeMgr !== undefined) {
+                    connection.query("INSERT INTO employee SET ?", {
+                        first_name: answers.first_name,
+                        last_name: answers.last_name,
+                        role_id = employeeRole.id,
+                        manager_id = employeeMgr.id,
+                    }), 
+                    (err) => {
+                        if (err) throw err;
+                        console.log(`new employee record for ${answers.last_name}, ${answers.first_name}`);
+                    }
+                }                
+            })
+        });
+    });
+
+    mainMenu();
+}
+
 //updateEmployeeRole()
 //endSession()
+
+const firstOrDefault = (arr, propName, matchValue) => {
+    let result;
+    arr.forEach(item => {
+        let compValue = item[propName];
+        if (compValue === matchValue) {
+            result = item;
+            break;
+        }
+    });
+    return result;
+};
