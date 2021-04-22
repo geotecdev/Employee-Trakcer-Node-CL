@@ -38,13 +38,13 @@ const mainMenu = () => {
                 viewDepartments();
                 break;
             case "Add Department":
-                //addDepartment();
+                addDepartment();
                 break;
             case "View Roles":
                 viewRoles();
                 break;                                           
             case "Add Role":
-                //addRole();
+                addRole();
                 break;
             case "View Employees":
                 viewEmployees();
@@ -53,10 +53,10 @@ const mainMenu = () => {
                 addEmployee();
                 break;
             case "Update Employee Role":
-                //updateEmployeeRole();
+                updateEmployeeRole();
                 break;                                           
             default:
-                //endSession();
+                endSession();
                 break;
         }
     })
@@ -131,7 +131,7 @@ const addRole = () => {
                 type: "rawlist",
                 message: "which department is this role organized under?",
                 choices() {
-                    const choices = [];
+                    let choices = [];
                     departments.foreach(dep => {
                         choices.push(dep.department_name);
                     })
@@ -197,7 +197,7 @@ const addEmployee = () => {
                     type: "rawlist",
                     message: "choose a role for the employee",
                     choices() {
-                        const choices = [];
+                        let choices = [];
                         roles.forEach(role => {
                             choices.push(role.title);
                         })
@@ -209,9 +209,9 @@ const addEmployee = () => {
                     type: "rawlist",
                     message: "select the employee's manager",
                     choices() {
-                        const choices = [];
+                        let choices = [];
                         mgrs.forEach(mgr => {
-                            choices.push(mgr.id + ';' + mgr.last_name + ";" + mgr.first_name);
+                            choices.push(mgr.id + '-' + mgr.last_name + ", " + mgr.first_name);
                         })
                         return choices;
                     }
@@ -219,7 +219,7 @@ const addEmployee = () => {
             ])
             .then((answers) => {
                 const employeeRole = firstOrDefault(roles, "title", answers.selected_role);
-                const employeeMgr = firstOrDefault(mgrs, "id", answers.selected_manager.split(';')[0]);
+                const employeeMgr = firstOrDefault(mgrs, "id", parseInt(answers.selected_manager.split('-')[0]));
                 if (employeeRole !== undefined && employeeMgr !== undefined) {
                     connection.query("INSERT INTO employee SET ?", {
                         first_name: answers.first_name,
@@ -240,8 +240,69 @@ const addEmployee = () => {
 }
 
 //updateEmployeeRole()
-//endSession()
+const updateEmployeeRole = () => {
+    let sqlQuery = `SELECT emp.first_name, emp.last_name, rl.title, mgr.first_name as manager_fn, mgr.last_name as manager_ln 
+                        FROM employee as emp
+                        LEFT JOIN role as rl ON emp.role_id=rl.id
+                        LEFT JOIN employee as mgr ON emp.manager_id=mgr.id`;
+    connection.query(sqlQuery, (err, employees) => {
+        sqlQuery = `SELECT rl.title, rl.salary, dep.department_name FROM role as rl
+                    LEFT JOIN department AS dep ON rl.department_id=dep.id`;
+        connection.query(sqlQuery, (err, roles) => {
+            inquirer.prompt([
+                {
+                    name: "selected_employee",
+                    type: "rawlist",
+                    message: "choose an employee to update thier role",
+                    choices() {
+                        let choices = [];
+                        employees.forEach(emp => {
+                            choices.push(emp.id + "-" + emp.last_name + ", " + emp.first_name + ": " + emp.title);
+                        });
+                        return choices;
+                    }
+                },
+                {
+                    name: "selected_role",
+                    type: "rawlist",
+                    message: "choose a new role for this employee",
+                    choices() {
+                        let choices = [];
+                        roles.forEach(role => {
+                            choices.push(role.id + "-" + role.title + "(" + role.department_name + ")");
+                        })
+                        return choices;
+                    }
+                }
+            ])
+            .then((answers) => {
+                const employeeId = parseInt(answers.selected_employee.split("-")[0]);
+                const newRoleId = parseInt(answers.selected_role.split("-")[0]);
+                if (employeeId !== 0 && newRoleId !== 0) {
+                    connection.query()`UPDATE employee SET ? WHERE ?`, [
+                        { role_id: newRoleId },
+                        { id: employeeId }
+                    ],
+                    (err, res) => {
+                        if (err) throw err;
+                        console.log(`role value updated for ${answers.selected_employee}`);
+                    }
+                }
+            })
+        });
+    });
 
+    mainMenu();
+};
+
+//endSession()
+function endSession() {
+    console.log("Closing the application...");
+    process.exit();
+}
+
+
+//helper functions
 const firstOrDefault = (arr, propName, matchValue) => {
     let result;
     arr.forEach(item => {
