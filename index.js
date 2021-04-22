@@ -74,7 +74,24 @@ const viewDepartments = () => {
 
 //addDepartment()
 const addDepartment = () => {
+   inquirer.prompt([
+       {
+        name: "department_name",
+        type: "input",
+        message: "enter a name for the new department",   
+       }
+   ])
+   .then((answer) => {
+        connection.query(`INSERT INTO deparment SET ?`, {
+            department_name: answer.department_name
+        }),
+        (err) => {
+            if (err) throw err;
+            console.log(`new ${answer.department_name} department added`);
+        }
+   })
 
+   mainMenu();
 };
 
 //viewRoles()
@@ -85,10 +102,62 @@ const viewRoles = () => {
     connection.query(sqlQuery, (err, roles) => {
         console.table(roles);        
     });
+
     mainMenu();
 };
 
 //addRole()
+const addRole = () => {
+    //get departments for department_id
+    const sqlQuery = `SELECT * from department`;
+    connection.query(sqlQuery, (err, departments) => {
+        if (err) throw err;
+        inquirer.prompt([
+            {
+                name: "title",
+                type: "input",
+                message: "enter a title for this role",
+            },
+            {
+                name: "salary",
+                type: "input",
+                message: "enter a base salary for this role",
+                validate: function validateInput(salary) {
+                    return salary > 0;
+                }
+            },
+            {
+                name: "selected_department",
+                type: "rawlist",
+                message: "which department is this role organized under?",
+                choices() {
+                    const choices = [];
+                    departments.foreach(dep => {
+                        choices.push(dep.department_name);
+                    })
+                    return choices;
+                }
+            }
+        ])
+        .then((answers) => {
+            const roleDepartment = firstOrDefault(departments, "department_name", answers.selected_department);
+            if (roleDepartment !== undefined) {
+                connection.query(`INSERT INTO role SET ?`, {
+                    title: answers.title,
+                    salary: answers.salary,
+                    department_id: roleDepartment.id
+                }),
+                (err) => {
+                    if (err) throw err;
+                    console.log(`new ${answers.title} role added`);
+                }
+            }
+        });
+    });
+
+    mainMenu();
+};
+
 //viewEmployees()
 const viewEmployees = () => {
     const sqlQuery = `SELECT emp.first_name, emp.last_name, rl.title, mgr.first_name as manager_fn, mgr.last_name as manager_ln 
@@ -99,6 +168,7 @@ const viewEmployees = () => {
     connection.query(sqlQuery, (err, employees) => {
         console.table(employees);        
     });
+
     mainMenu();
 }
 
@@ -148,8 +218,8 @@ const addEmployee = () => {
                 }
             ])
             .then((answers) => {
-                let employeeRole = firstOrDefault(roles, title, answers.selected_role);
-                let employeeMgr = firstOrDefault(mgrs, id, answers.selected_manager.split(';')[0]);
+                const employeeRole = firstOrDefault(roles, "title", answers.selected_role);
+                const employeeMgr = firstOrDefault(mgrs, "id", answers.selected_manager.split(';')[0]);
                 if (employeeRole !== undefined && employeeMgr !== undefined) {
                     connection.query("INSERT INTO employee SET ?", {
                         first_name: answers.first_name,
@@ -181,5 +251,6 @@ const firstOrDefault = (arr, propName, matchValue) => {
             break;
         }
     });
+
     return result;
 };
