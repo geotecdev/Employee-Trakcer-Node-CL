@@ -1,7 +1,7 @@
 //dependencies
-//const mysql = require("mysql");
+const mysql = require("mysql");
 const inquirer = require("inquirer");
-const table = require("console.table");
+require("console.table");
 
 const connection = mysql.createConnection({
     host: "localhost",
@@ -16,9 +16,10 @@ connection.connect((err) => {
     mainMenu();
 });
 
+//const mainMenu = () => 
 const mainMenu = () => {
     inquirer.prompt({
-        name: sessionAction,
+        name: "sessionAction",
         type: "rawlist",
         message: "pick an action to perform",
         choices: [
@@ -33,7 +34,7 @@ const mainMenu = () => {
         ]
     })
     .then((selectedAction) => {
-        switch (selectedAction.action) {
+        switch (selectedAction.sessionAction) {
             case "View Departments":
                 viewDepartments();
                 break;
@@ -55,21 +56,27 @@ const mainMenu = () => {
             case "Update Employee Role":
                 updateEmployeeRole();
                 break;                                           
-            default:
+            case "Quit Session":
                 endSession();
                 break;
         }
     })
 };
 
-//viewDepartments()
+//
 const viewDepartments = () => {
     const sqlQuery = "SELECT * FROM department";
-    console.log("Departments List:");
+    tableHeader("Departments List:");
     connection.query(sqlQuery, (err, departments) => {
-        console.table(departments);        
+        if (err) {
+            console.log(err.message);
+        } else {
+            console.table(departments);
+            sleep(2);
+            mainMenu();
+        }        
     });
-    mainMenu();
+    
 };
 
 //addDepartment()
@@ -82,28 +89,32 @@ const addDepartment = () => {
        }
    ])
    .then((answer) => {
-        connection.query(`INSERT INTO deparment SET ?`, {
+        connection.query(`INSERT INTO department SET ?`, {
             department_name: answer.department_name
         }),
         (err) => {
-            if (err) throw err;
+            if (err) {
+                console.log(err.message);
+                throw err;
+            }
             console.log(`new ${answer.department_name} department added`);
         }
+        
+        sleep(2);
+        mainMenu();
    })
-
-   mainMenu();
 };
 
 //viewRoles()
 const viewRoles = () => {
     const sqlQuery = `SELECT rl.title, rl.salary, dep.department_name FROM role as rl
                         LEFT JOIN department AS dep ON rl.department_id=dep.id`;
-    console.log("Roles List:");
+    tableHeader("Roles List:");
     connection.query(sqlQuery, (err, roles) => {
-        console.table(roles);        
-    });
-
-    mainMenu();
+        console.table(roles);
+        sleep(2);
+        mainMenu();   
+    });    
 };
 
 //addRole()
@@ -132,7 +143,7 @@ const addRole = () => {
                 message: "which department is this role organized under?",
                 choices() {
                     let choices = [];
-                    departments.foreach(dep => {
+                    departments.forEach(dep => {
                         choices.push(dep.department_name);
                     })
                     return choices;
@@ -151,11 +162,14 @@ const addRole = () => {
                     if (err) throw err;
                     console.log(`new ${answers.title} role added`);
                 }
+                
             }
+            sleep(2);
+            mainMenu();
         });
     });
 
-    mainMenu();
+    
 };
 
 //viewEmployees()
@@ -164,12 +178,12 @@ const viewEmployees = () => {
                         FROM employee as emp
                         LEFT JOIN role as rl ON emp.role_id=rl.id
                         LEFT JOIN employee as mgr ON emp.manager_id=mgr.id`;
-    console.log("Employees List:");
+    tableHeader("Employees List:");
     connection.query(sqlQuery, (err, employees) => {
-        console.table(employees);        
-    });
-
-    mainMenu();
+        console.table(employees);
+        sleep(2);
+        mainMenu();
+    });    
 }
 
 //addEmployee()
@@ -224,19 +238,19 @@ const addEmployee = () => {
                     connection.query("INSERT INTO employee SET ?", {
                         first_name: answers.first_name,
                         last_name: answers.last_name,
-                        role_id = employeeRole.id,
-                        manager_id = employeeMgr.id,
+                        role_id: employeeRole.id,
+                        manager_id: employeeMgr.id,
                     }), 
                     (err) => {
                         if (err) throw err;
                         console.log(`new employee record for ${answers.last_name}, ${answers.first_name}`);
                     }
-                }                
+                }
+                sleep(2);
+                mainMenu();
             })
         });
-    });
-
-    mainMenu();
+    });    
 }
 
 //updateEmployeeRole()
@@ -288,11 +302,14 @@ const updateEmployeeRole = () => {
                         console.log(`role value updated for ${answers.selected_employee}`);
                     }
                 }
+
+                sleep(2);
+                mainMenu();
             })
         });
     });
 
-    mainMenu();
+    
 };
 
 //endSession()
@@ -303,13 +320,27 @@ function endSession() {
 
 
 //helper functions
+const tableHeader = (headerText) => {
+    const nLine = "\\n";
+    const borderText = "============================================";
+    console.log(borderText);
+    console.log();
+    console.log(headerText);
+    console.log();
+    console.log(borderText);
+};
+
+const sleep = (seconds) => {
+  var e = new Date().getTime() + (seconds * 1000);
+  while (new Date().getTime() <= e) {}
+};
+
 const firstOrDefault = (arr, propName, matchValue) => {
     let result;
     arr.forEach(item => {
         let compValue = item[propName];
         if (compValue === matchValue) {
             result = item;
-            break;
         }
     });
 

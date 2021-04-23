@@ -27,10 +27,7 @@ CREATE TABLE employee (
     FOREIGN KEY (role_id) REFERENCES role(id) ON DELETE CASCADE
 );
 
---FOREIGN KEY (manager_id) REFERENCES employee(id) ON DELETE SET NULL
 
-
---seed database with values for testing
 INSERT INTO department (department_name)
 VALUES 
     ("Sales"),
