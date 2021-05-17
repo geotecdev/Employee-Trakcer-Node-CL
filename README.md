@@ -7,9 +7,9 @@ The msql database created by running the script in schema.sql has three tables w
 # Installation Instructions
 First, run the script in schema.sql to create and seed the starting database. you will need to update the password connection property in index.js (line 9) to your own before running the program. Here are the required dependencies as terminal commands:
 
-npm i console.table
-npm i inquirer
-npm i mysql
+### npm i console.table
+### npm i inquirer
+### npm i mysql
 
 finally, run "npm start" execute the program.
 
