@@ -7,7 +7,8 @@ const connection = mysql.createConnection({
     host: "localhost",
     user: "root",
     password: "",
-    database: "employees"
+    database: "employees",
+    multipleStatements: true
 });
 
 connection.connect((err) => {
@@ -255,12 +256,12 @@ const addEmployee = () => {
 
 //updateEmployeeRole()
 const updateEmployeeRole = () => {
-    let sqlQuery = `SELECT emp.first_name, emp.last_name, rl.title, mgr.first_name as manager_fn, mgr.last_name as manager_ln 
+    let sqlQuery = `SELECT emp.id, emp.first_name, emp.last_name, rl.title, mgr.first_name as manager_fn, mgr.last_name as manager_ln 
                         FROM employee as emp
                         LEFT JOIN role as rl ON emp.role_id=rl.id
                         LEFT JOIN employee as mgr ON emp.manager_id=mgr.id`;
     connection.query(sqlQuery, (err, employees) => {
-        sqlQuery = `SELECT rl.title, rl.salary, dep.department_name FROM role as rl
+        sqlQuery = `SELECT rl.id, rl.title, rl.salary, dep.department_name FROM role as rl
                     LEFT JOIN department AS dep ON rl.department_id=dep.id`;
         connection.query(sqlQuery, (err, roles) => {
             inquirer.prompt([
@@ -293,10 +294,10 @@ const updateEmployeeRole = () => {
                 const employeeId = parseInt(answers.selected_employee.split("-")[0]);
                 const newRoleId = parseInt(answers.selected_role.split("-")[0]);
                 if (employeeId !== 0 && newRoleId !== 0) {
-                    connection.query()`UPDATE employee SET ? WHERE ?`, [
+                    connection.query(`UPDATE employee SET ? WHERE ?`, [
                         { role_id: newRoleId },
                         { id: employeeId }
-                    ],
+                    ]),
                     (err, res) => {
                         if (err) throw err;
                         console.log(`role value updated for ${answers.selected_employee}`);
